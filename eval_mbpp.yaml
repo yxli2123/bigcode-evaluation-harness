@@ -1,0 +1,50 @@
+description: eval_gsm8k
+
+target:
+  # A100 40G
+  service: sing
+  name: aims-sing-res-wus3-02
+  workspace_name: aims-sing-res-eu-WS
+
+#  service: aml
+#  name: V10032G
+
+environment:
+  image: pytorch/pytorch:2.1.1-cuda12.1-cudnn8-devel
+  image_setup:
+    - apt-get -y update
+    - apt-get -y install wget
+    - apt-get -y install git
+    - apt-get -y install git-lfs
+  setup:
+    - pip install transformers
+    - pip install accelerate
+    - pip install peft
+    - pip install evaluate scikit-learn scipy typing_extensions einops deepspeed fire
+    - pip install datasets sentencepiece setuptools rouge-score nltk openai
+    - pip install tensorboard tensorboardX wandb
+    - pip install bitsandbytes torch-dct
+    - pip install -e ./
+
+storage:
+  output:
+    storage_account_name: tsinterns
+    container_name: t-qingzhang
+    mount_dir: /mnt/t-qingzhang
+
+code:
+  local_dir: ../
+
+jobs:
+- name: eval_mbpp_codellama_7b
+  sku: 1xG8
+  process_count_per_node: 1
+  submit_args:
+    container_args:
+      cpus: 32
+  command:
+    - accelerate launch  main.py --model meta-llama/CodeLlama-7b-hf
+      --max_length_generation 512 --tasks mbpp --temperature 0.1 --n_samples 15 --batch_size 16
+      --allow_code_execution --use_auth_token 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 --precision bf16
+
+
